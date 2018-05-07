@@ -63,11 +63,12 @@ public:
   }
 
   void expectAdd(const std::string& cluster_name) {
-    EXPECT_CALL(cm_, addOrUpdateCluster(_))
-        .WillOnce(Invoke([cluster_name](const envoy::api::v2::Cluster& cluster) -> bool {
-          EXPECT_EQ(cluster_name, cluster.name());
-          return true;
-        }));
+    EXPECT_CALL(cm_, addOrUpdateCluster(_, _)) // fixfix test version?
+        .WillOnce(Invoke(
+            [cluster_name](const envoy::api::v2::Cluster& cluster, const std::string&) -> bool {
+              EXPECT_EQ(cluster_name, cluster.name());
+              return true;
+            }));
   }
 
   void expectRequest() {

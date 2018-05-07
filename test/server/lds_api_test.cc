@@ -50,20 +50,20 @@ public:
     EXPECT_CALL(*cluster.info_, type());
     interval_timer_ = new Event::MockTimer(&dispatcher_);
     EXPECT_CALL(init_, registerTarget(_));
-    lds_.reset(new LdsApi(lds_config, cluster_manager_, dispatcher_, random_, init_, local_info_,
-                          store_, listener_manager_));
+    lds_.reset(new LdsApiImpl(lds_config, cluster_manager_, dispatcher_, random_, init_,
+                              local_info_, store_, listener_manager_));
 
     expectRequest();
     init_.initialize();
   }
 
   void expectAdd(const std::string& listener_name, bool updated) {
-    EXPECT_CALL(listener_manager_, addOrUpdateListener(_, true))
-        .WillOnce(
-            Invoke([listener_name, updated](const envoy::api::v2::Listener& config, bool) -> bool {
-              EXPECT_EQ(listener_name, config.name());
-              return updated;
-            }));
+    EXPECT_CALL(listener_manager_, addOrUpdateListener(_, _, true)) // fixfix version test?
+        .WillOnce(Invoke([listener_name, updated](const envoy::api::v2::Listener& config,
+                                                  const std::string&, bool) -> bool {
+          EXPECT_EQ(listener_name, config.name());
+          return updated;
+        }));
   }
 
   void expectRequest() {
@@ -103,7 +103,7 @@ public:
   Stats::IsolatedStoreImpl store_;
   MockListenerManager listener_manager_;
   Http::MockAsyncClientRequest request_;
-  std::unique_ptr<LdsApi> lds_;
+  std::unique_ptr<LdsApiImpl> lds_;
   Event::MockTimer* interval_timer_{};
   Http::AsyncClient::Callbacks* callbacks_{};
 
@@ -138,8 +138,8 @@ TEST_F(LdsApiTest, UnknownCluster) {
   Upstream::ClusterManager::ClusterInfoMap cluster_map;
   EXPECT_CALL(cluster_manager_, clusters()).WillOnce(Return(cluster_map));
   EXPECT_THROW_WITH_MESSAGE(
-      LdsApi(lds_config, cluster_manager_, dispatcher_, random_, init_, local_info_, store_,
-             listener_manager_),
+      LdsApiImpl(lds_config, cluster_manager_, dispatcher_, random_, init_, local_info_, store_,
+                 listener_manager_),
       EnvoyException,
       "envoy::api::v2::core::ConfigSource must have a statically defined non-EDS "
       "cluster: 'foo_cluster' does not exist, was added via api, or is an "
@@ -164,7 +164,7 @@ TEST_F(LdsApiTest, MisconfiguredListenerNameIsPresentInException) {
 
   EXPECT_CALL(listener_manager_, listeners()).WillOnce(Return(existing_listeners));
 
-  EXPECT_CALL(listener_manager_, addOrUpdateListener(_, true))
+  EXPECT_CALL(listener_manager_, addOrUpdateListener(_, _, true))
       .WillOnce(Throw(EnvoyException("something is wrong")));
 
   EXPECT_THROW_WITH_MESSAGE(lds_->onConfigUpdate(listeners, ""), EnvoyException,
@@ -192,8 +192,8 @@ TEST_F(LdsApiTest, BadLocalInfo) {
   EXPECT_CALL(*cluster.info_, addedViaApi());
   EXPECT_CALL(*cluster.info_, type());
   ON_CALL(local_info_, clusterName()).WillByDefault(Return(std::string()));
-  EXPECT_THROW_WITH_MESSAGE(LdsApi(lds_config, cluster_manager_, dispatcher_, random_, init_,
-                                   local_info_, store_, listener_manager_),
+  EXPECT_THROW_WITH_MESSAGE(LdsApiImpl(lds_config, cluster_manager_, dispatcher_, random_, init_,
+                                       local_info_, store_, listener_manager_),
                             EnvoyException,
                             "lds: setting --service-cluster and --service-node is required");
 }

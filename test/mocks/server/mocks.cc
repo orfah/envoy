@@ -33,10 +33,15 @@ MockOptions::MockOptions(const std::string& config_path) : config_path_(config_p
 }
 MockOptions::~MockOptions() {}
 
+MockConfigTracker::MockConfigTracker() {
+  // fixfix map?
+  ON_CALL(*this, add_(_, _))
+      .WillByDefault(DoAll(SaveArg<1>(&config_tracker_callback_), ReturnNew<MockEntryOwner>()));
+}
+MockConfigTracker::~MockConfigTracker() {}
+
 MockAdmin::MockAdmin() {
-  ON_CALL(*this, getConfigTracker()).WillByDefault(testing::ReturnRef(config_tracker));
-  ON_CALL(config_tracker, addReturnsRaw(_, _))
-      .WillByDefault(ReturnNew<Server::MockConfigTracker::MockEntryOwner>());
+  ON_CALL(*this, getConfigTracker()).WillByDefault(testing::ReturnRef(config_tracker_));
 }
 MockAdmin::~MockAdmin() {}
 
