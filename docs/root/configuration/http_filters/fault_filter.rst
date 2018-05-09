@@ -47,8 +47,8 @@ fault.http.abort.abort_percent
   *abort* block, then *abort_percent* defaults to 0.
 
 fault.http.abort.http_status
-  HTTP status code that will be used as the  of requests that will be
-  aborted if the headers match. Defaults to the HTTP status code specified
+  HTTP status code that will be used as the response code of requests that will
+  be aborted if the headers match. Defaults to the HTTP status code specified
   in the config. If the config does not contain an *abort* block, then
   *http_status* defaults to 0.
 
